@@ -1,71 +1,63 @@
-/// <reference path="webgl.d.ts" />
-
-let Player = class {
+let Track = class {
     constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
 
         this.positions = [
-             // Front face
-             -1.0, -1.0, 1.0,
-             1.0, -1.0, 1.0,
-             1.0, 1.0, 1.0,
-             -1.0, 1.0, 1.0,
-             //Back Face
-             -1.0, -1.0, -1.0,
-             1.0, -1.0, -1.0,
-             1.0, 1.0, -1.0,
-             -1.0, 1.0, -1.0,
-             //Top Face
-             -1.0, 1.0, -1.0,
-             1.0, 1.0, -1.0,
-             1.0, 1.0, 1.0,
-             -1.0, 1.0, 1.0,
-             //Bottom Face
-             -1.0, -1.0, -1.0,
-             1.0, -1.0, -1.0,
-             1.0, -1.0, 1.0,
-             -1.0, -1.0, 1.0,
-             //Left Face
-             -1.0, -1.0, -1.0,
-             -1.0, 1.0, -1.0,
-             -1.0, 1.0, 1.0,
-             -1.0, -1.0, 1.0,
-             //Right Face
-             1.0, -1.0, -1.0,
-             1.0, 1.0, -1.0,
-             1.0, 1.0, 1.0,
-             1.0, -1.0, 1.0,
+             -0.8, -0.1, 0,
+             -1.1, -0.1, 0,
+             -1.1, -0.1, -99999,
+             -0.8, -0.1, -99999,
+
+             0.8, -0.1, 0,
+             1.1, -0.1, 0,
+             1.1, -0.1, -99999,
+             0.8, -0.1, -99999,
         ];
 
-        this.rotation = 0;
-        this.maxheight = 15;
-        this.hasFlyBoost = false;
-        this.hasBoot = false;
-        this.pos = pos;
-        this.smljmpspd = 0.3;
-        this.lrgjmpspd = 0.6;
+        var z = -2;
+        for (; z>-9999; z-=6) {
+            this.positions.push(-1.3);
+            this.positions.push(0.0);
+            this.positions.push(z);
 
-        this.speed = [0, 0, -0.2];
-        this.acc = [0, -0.016, -0.0001];
+            this.positions.push(1.3);
+            this.positions.push(0.0);
+            this.positions.push(z);
+
+            this.positions.push(1.3);
+            this.positions.push(0.0);
+            this.positions.push(z-1);
+
+            this.positions.push(-1.3);
+            this.positions.push(0.0);
+            this.positions.push(z-1);
+        }
+
+        this.positions.push(-10000, -0.2, 10, 10000, -0.2, 10, 1000, 0.2, -99999, -1000, -0.2, -99999);
+        this.positions.push(-99999, -100, -99999, -99999, 99999, -99999, 99999, 99999, -99999, 99999, -100, -99999);
+        
+        this.rotation = 0;
+
+        this.pos = pos;
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
         
         this.faceColors = [
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
+            [0, 0, 0, 1.0],
+            [0, 0, 0, 1.0]
         ];
+
+        for (var i=24; i<this.positions.length-24; i+=12) {
+            this.faceColors.push([0.65, 0.247, 0.0156, 1.0]);
+        }
+        this.faceColors.push([0.537, 0.87, 0.0352, 1.0]);
+        this.faceColors.push([0.22, 0.866, 0.96, 1.0]);
 
         var colors = [];
 
         for (var j = 0; j < this.faceColors.length; ++j) {
             const c = this.faceColors[j];
-
-            // Repeat each color four times for the four vertices of the face
             colors = colors.concat(c, c, c, c);
         }
 
@@ -83,14 +75,20 @@ let Player = class {
         // indices into the vertex array to specify each triangle's
         // position.
 
-        const indices = [
-            0, 1, 2,    0, 2, 3, // front
-            4, 5, 6,    4, 6, 7,
-            8, 9, 10,   8, 10, 11,
-            12, 13, 14, 12, 14, 15,
-            16, 17, 18, 16, 18, 19,
-            20, 21, 22, 20, 22, 23, 
+        var indices = [
+            0, 1, 2,    0, 2, 3,
+            4, 5, 6,    4, 6, 7
         ];
+
+        for (var i=8; i<this.positions.length; i+=4) {
+            indices.push(i);
+            indices.push(i+1);
+            indices.push(i+2);
+
+            indices.push(i);
+            indices.push(i+2);
+            indices.push(i+3);
+        }
 
         // Now send the element array to GL
 
@@ -113,12 +111,10 @@ let Player = class {
             this.pos
         );
         
-        //this.rotation += Math.PI / (((Math.random()) % 100) + 50);
-
-        mat4.rotate(modelViewMatrix,
-            modelViewMatrix,
-            this.rotation,
-            [1, 1, 1]);
+        // mat4.rotate(modelViewMatrix,
+        //     modelViewMatrix,
+        //     this.rotation,
+        //     [1, 1, 1]);
 
         {
             const numComponents = 3;
@@ -162,11 +158,9 @@ let Player = class {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffer.indices);
 
         // Tell WebGL to use our program when drawing
-
         gl.useProgram(programInfo.program);
 
         // Set the shader uniforms
-
         gl.uniformMatrix4fv(
             programInfo.uniformLocations.projectionMatrix,
             false,
@@ -177,7 +171,7 @@ let Player = class {
             modelViewMatrix);
 
         {
-            const vertexCount = 36;
+            const vertexCount = (this.positions.length/2);
             const type = gl.UNSIGNED_SHORT;
             const offset = 0;
             gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
@@ -185,19 +179,4 @@ let Player = class {
 
     }
 
-    tick() {
-        this.pos[0] += this.speed[0];
-        this.pos[1] += this.speed[1];
-        this.pos[2] += this.speed[2];
-        if (this.speed[1] != 0 && (this.hasFlyBoost == false)) {
-            this.speed[1] += this.acc[1];
-        }
-        if (this.speed[1] != 0 && (this.hasFlyBoost == true) && this.pos[1] >= this.maxheight) {
-            this.pos[1] = this.maxheight;
-            this.speed[1] = 0;
-        }
-        if (Math.abs(this.speed[2]) < 0.5 && (this.hasFlyBoost == false)) {
-            this.speed[2] += this.acc[2];
-        }
-    }
 };

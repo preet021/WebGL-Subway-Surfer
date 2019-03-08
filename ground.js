@@ -1,25 +1,57 @@
-let Hurdle1 = class {
-    constructor(gl, pos, texture) {
+let Ground = class {
+    constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         this.positions = [
-             -1.5, 2, 0,
-             1.5, 2, 0,
-             1.5, 0, 0,
-             -1.5, 0, 0,
+             -50, -0.1, 10,
+             50, -0.1, 10,
+             50, -0.1, -100000,
+             -50, -0.1, -100000,
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
 
         this.rotation = 0;
+        
+        const txture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, txture);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 1;
+        const height = 1;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                width, height, border, srcFormat, srcType,
+                pixel);
 
-        this.texture = texture;
+        const image = new Image();
+        image.onload = function() {
+            gl.bindTexture(gl.TEXTURE_2D, txture);
+            gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  srcFormat, srcType, image);
+
+            if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+               gl.generateMipmap(gl.TEXTURE_2D);
+            } else {
+               // No, it's not a power of 2. Turn off mips and set
+               // wrapping to clamp to edge
+               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+        };
+        image.src = "ground.jpg";
+
+        this.texture = txture;
         const textureCoordBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
         const textureCoordinates = [
-            0.0,  0.0,
-            1.0,  0.0,
-            1.0,  1.0,
-            0.0,  1.0,
+            0, 0,
+            0, 25,
+            10000, 25,
+            10000, 0
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),gl.STATIC_DRAW);
 

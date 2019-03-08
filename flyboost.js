@@ -1,63 +1,56 @@
 /// <reference path="webgl.d.ts" />
 
-let Player = class {
+let Flyboost = class {
     constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
 
         this.positions = [
              // Front face
-             -1.0, -1.0, 1.0,
-             1.0, -1.0, 1.0,
-             1.0, 1.0, 1.0,
-             -1.0, 1.0, 1.0,
+             -0.3, -0.3, 0.3,
+             0.3, -0.3, 0.3,
+             0.3, 0.3, 0.3,
+             -0.3, 0.3, 0.3,
              //Back Face
-             -1.0, -1.0, -1.0,
-             1.0, -1.0, -1.0,
-             1.0, 1.0, -1.0,
-             -1.0, 1.0, -1.0,
+             -0.3, -0.3, -0.3,
+             0.3, -0.3, -0.3,
+             0.3, 0.3, -0.3,
+             -0.3, 0.3, -0.3,
              //Top Face
-             -1.0, 1.0, -1.0,
-             1.0, 1.0, -1.0,
-             1.0, 1.0, 1.0,
-             -1.0, 1.0, 1.0,
+             -0.3, 0.3, -0.3,
+             0.3, 0.3, -0.3,
+             0.3, 0.3, 0.3,
+             -0.3, 0.3, 0.3,
              //Bottom Face
-             -1.0, -1.0, -1.0,
-             1.0, -1.0, -1.0,
-             1.0, -1.0, 1.0,
-             -1.0, -1.0, 1.0,
+             -0.3, -0.3, -0.3,
+             0.3, -0.3, -0.3,
+             0.3, -0.3, 0.3,
+             -0.3, -0.3, 0.3,
              //Left Face
-             -1.0, -1.0, -1.0,
-             -1.0, 1.0, -1.0,
-             -1.0, 1.0, 1.0,
-             -1.0, -1.0, 1.0,
+             -0.3, -0.3, -0.3,
+             -0.3, 0.3, -0.3,
+             -0.3, 0.3, 0.3,
+             -0.3, -0.3, 0.3,
              //Right Face
-             1.0, -1.0, -1.0,
-             1.0, 1.0, -1.0,
-             1.0, 1.0, 1.0,
-             1.0, -1.0, 1.0,
+             0.3, -0.3, -0.3,
+             0.3, 0.3, -0.3,
+             0.3, 0.3, 0.3,
+             0.3, -0.3, 0.3,
         ];
 
         this.rotation = 0;
-        this.maxheight = 15;
-        this.hasFlyBoost = false;
-        this.hasBoot = false;
-        this.pos = pos;
-        this.smljmpspd = 0.3;
-        this.lrgjmpspd = 0.6;
 
-        this.speed = [0, 0, -0.2];
-        this.acc = [0, -0.016, -0.0001];
+        this.pos = pos;
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
         
         this.faceColors = [
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
-            [1,  0,  0,  1.0],
+            [1,  0,  1,  1.0],
+            [1,  0,  1,  1.0],
+            [1,  0,  1,  1.0],
+            [1,  0,  1,  1.0],
+            [1,  0,  1,  1.0],
+            [1,  0,  1,  1.0],
         ];
 
         var colors = [];
@@ -115,10 +108,10 @@ let Player = class {
         
         //this.rotation += Math.PI / (((Math.random()) % 100) + 50);
 
-        mat4.rotate(modelViewMatrix,
-            modelViewMatrix,
-            this.rotation,
-            [1, 1, 1]);
+        // mat4.rotate(modelViewMatrix,
+        //     modelViewMatrix,
+        //     this.rotation,
+        //     [1, 1, 1]);
 
         {
             const numComponents = 3;
@@ -189,14 +182,9 @@ let Player = class {
         this.pos[0] += this.speed[0];
         this.pos[1] += this.speed[1];
         this.pos[2] += this.speed[2];
-        if (this.speed[1] != 0 && (this.hasFlyBoost == false)) {
+        if (this.speed[1] != 0)
             this.speed[1] += this.acc[1];
-        }
-        if (this.speed[1] != 0 && (this.hasFlyBoost == true) && this.pos[1] >= this.maxheight) {
-            this.pos[1] = this.maxheight;
-            this.speed[1] = 0;
-        }
-        if (Math.abs(this.speed[2]) < 0.5 && (this.hasFlyBoost == false)) {
+        if (Math.abs(this.speed[2]) < 0.5) {
             this.speed[2] += this.acc[2];
         }
     }

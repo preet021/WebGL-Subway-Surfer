@@ -1,32 +1,94 @@
-let Hurdle1 = class {
-    constructor(gl, pos, texture) {
+/// <reference path="webgl.d.ts" />
+
+let Brake = class {
+    constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+        this.d = 5;
+        this.l = 2;
         this.positions = [
-             -1.5, 2, 0,
-             1.5, 2, 0,
-             1.5, 0, 0,
-             -1.5, 0, 0,
+             // Front face
+             -this.d/2, 0, -this.l/2,
+             this.d/2, 0, -this.l/2,
+             this.d/2, 0.3, -this.l/3,
+             -this.d/2, 0.3, -this.l/3,
+             //Back Face
+             -this.d/2, 0.3, this.l/3,
+             this.d/2, 0.3, this.l/3,
+             this.d/2, 0, this.l/2,
+             -this.d/2, 0, this.l/2,
+             //Top Face
+             this.d/2, 0.3, -this.l/3,
+             -this.d/2, 0.3, -this.l/3,
+             -this.d/2, 0.3, this.l/3,
+             this.d/2, 0.3, this.l/3
         ];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
 
         this.rotation = 0;
 
-        this.texture = texture;
+        this.pos = pos;
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
+        const txture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, txture);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 1;
+        const height = 1;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                width, height, border, srcFormat, srcType,
+                pixel);
+
+        const image = new Image();
+        image.onload = function() {
+            gl.bindTexture(gl.TEXTURE_2D, txture);
+            gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  srcFormat, srcType, image);
+
+            if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+               gl.generateMipmap(gl.TEXTURE_2D);
+            } else {
+               // No, it's not a power of 2. Turn off mips and set
+               // wrapping to clamp to edge
+               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+        };
+        image.src = "spdbrk.jpg";
+
+        this.texture = txture;
         const textureCoordBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
         const textureCoordinates = [
-            0.0,  0.0,
-            1.0,  0.0,
-            1.0,  1.0,
-            0.0,  1.0,
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),gl.STATIC_DRAW);
 
-        this.pos = pos;
-        
         // this.faceColors = [
-        //     [0,  0,  1,  1.0],
+        //     [0.41,  0.6,  1,  1.0],
+        //     [0.41,  0.6,  1,  1.0],
+        //     [0.41,  0.6,  1,  1.0],
+        //     [0.41,  0.6,  1,  1.0],
+        //     [0.41,  0.6,  1,  1.0],
+        //     [0.41,  0.6,  1,  1.0],
         // ];
 
         // var colors = [];
@@ -53,7 +115,12 @@ let Hurdle1 = class {
         // position.
 
         const indices = [
-            0, 1, 2, 0, 2, 3 // front
+            0, 1, 2,    0, 2, 3, // front
+            4, 5, 6,    4, 6, 7,
+            8, 9, 10,   8, 10, 11,
+            12, 13, 14, 12, 14, 15,
+            16, 17, 18, 16, 18, 19,
+            20, 21, 22, 20, 22, 23, 
         ];
 
         // Now send the element array to GL
@@ -78,6 +145,13 @@ let Hurdle1 = class {
             this.pos
         );
         
+        //this.rotation += Math.PI / (((Math.random()) % 100) + 50);
+
+        // mat4.rotate(modelViewMatrix,
+        //     modelViewMatrix,
+        //     this.rotation,
+        //     [1, 1, 1]);
+
         {
             const numComponents = 3;
             const type = gl.FLOAT;
@@ -112,9 +186,9 @@ let Hurdle1 = class {
         //         normalize,
         //         stride,
         //         offset);
-        //     gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
+        //     gl.enableVertexAttribArray(
+        //         programInfo.attribLocations.vertexColor);
         // }
-
 
         // tell webgl how to pull out the texture coordinates from buffer
         {
@@ -134,7 +208,7 @@ let Hurdle1 = class {
         // Tell WebGL to use our program when drawing
 
         gl.useProgram(programInfo.program);
-        
+
         // Tell WebGL we want to affect texture unit 0
         gl.activeTexture(gl.TEXTURE0);
 
@@ -156,7 +230,7 @@ let Hurdle1 = class {
             modelViewMatrix);
 
         {
-            const vertexCount = 6;
+            const vertexCount = 18;
             const type = gl.UNSIGNED_SHORT;
             const offset = 0;
             gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);

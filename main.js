@@ -17,7 +17,7 @@ function main() {
   const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable(gl.BLEND);
-  const hurdle1texture = loadTexture(gl, 'wooden.jpg');
+  const hurdle1texture = loadTexture(gl, 'wooden.png');
 
   ply = new Player(gl, [-3, 1, 0]);
   
@@ -29,7 +29,7 @@ function main() {
 
   ground = new Ground(gl, [0, -0.2, 0]);
 
-  police = new Police(gl, [-3, 1, 5]);
+  police = new Police(gl, [-3, 1, 8]);
   
   coins = [];
   for (var i=0; i<500; ++i) {
@@ -55,7 +55,7 @@ function main() {
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    hurdle1s.push(new Hurdle1(gl, [tmp, 0, -Math.floor(Math.random()*99999+1)], hurdle1texture));
+    hurdle1s.push(new Hurdle1(gl, [tmp, 0, -Math.floor(Math.random()*99999+1)]));
   }
   
   hurdle2s = [];
@@ -68,7 +68,7 @@ function main() {
   }
 
   fboosts = [];
-  for (var i=0; i<100; ++i) {
+  for (var i=0; i<50; ++i) {
   	let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
@@ -276,16 +276,16 @@ function drawScene(gl, programInfo1, programInfo2, deltaTime) {
       coins1[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
     }
     for (var i=0; i<hurdle1s.length; ++i) {
-      hurdle1s[i].draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
+      hurdle1s[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
     }
     for (var i=0; i<hurdle2s.length; ++i) {
       hurdle2s[i].draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
     }
     for (var i=0; i<fboosts.length; ++i) {
-      fboosts[i].draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
+      fboosts[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
     }
     for (var i=0; i<boots.length; ++i) {
-      boots[i].draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
+      boots[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
     }
     for (var i=0; i<spdbrks.length; ++i) {
       spdbrks[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
@@ -316,13 +316,17 @@ function tick_input () {
   if (rightPressed && ply.pos[0] == track2.pos[0]) {
     // call police
   }
-  if (downPressed) {
+  if (downPressed && !ply.hasFlyBoost && ply.pos[1] <= 1) {
     ply.pos[1] = 0;
   }
   else if (ply.pos[1] < 1) {
     ply.pos[1] = 1;
     ply.speed[1] = 0;
   }
+  if (ply.pos[1] < 0) {
+    ply.pos[1] = 0;
+  }
+  // console.log(ply.pos[1]);
 }
 
 function tick_elements () {
@@ -401,11 +405,12 @@ function detect_collisions () {
 
   // with flying boost
   for (var i=0; i<fboosts.length && ply.hasFlyBoost == false; ++i) {
+    if (ply.pos[2] < fboosts[i].pos[2]) continue;
   	let x, y, z;
   	x = y = z = false;
-  	if (Math.abs(ply.pos[0] - fboosts[i].pos[0]) <= 0.05) x = true;
-  	if (Math.abs(ply.pos[1] - fboosts[i].pos[1]) <= 1.3) y = true;
-  	if (Math.abs(ply.pos[2] - fboosts[i].pos[2]) <= 1.3) z = true;
+  	if (Math.abs(ply.pos[0] - fboosts[i].pos[0]) <= 0.01) x = true;
+  	if (Math.abs(ply.pos[1] - fboosts[i].pos[1]) < 1.3) y = true;
+  	if (Math.abs(ply.pos[2] - fboosts[i].pos[2]) < 1.3) z = true;
   	if (x && y && z) {
   		fboosts[i].pos[2] = 1000;
   		for (var j=0; j<coins1.length; ++j) {
@@ -417,25 +422,29 @@ function detect_collisions () {
   		ply.speed[1] = 0.1;
   		ply.hasFlyBoost = true;
   		setTimeout(function(){
-  			ply.speed[1] = -ply.lrgjmpspd;
+  			ply.speed[1] = -ply.smljmpspd;
   			ply.hasFlyBoost = false;
   		}, 12*1000);
   	}
+  }
 
-  	// with speed brakers
-  	for (var i=0; i<spdbrks.length && ply.hasFlyBoost == false; ++i) {
-  		let x, y, z;
-  		x = y = z = false;
-  		if (ply.pos[1] == 1) y = true;
-  		if (Math.abs(ply.pos[0]-spdbrks[i].pos[0]) <= 0.01) x = true;
-  		if (Math.abs(ply.pos[2]-spdbrks[i].pos[2]) <= 0.5+spdbrks[i].l/2.0) z = true;
-  		if (x && y && z) {
-  			spdbrks[i].pos[2] = 1000;
-  			police.pos[0] = ply.pos[0];
-  			police.pos[2] = ply.pos[2] + 5;
-  			ply.speed[2] = -0.2;
-  		}
-  	}
+  // with speed brakers
+  for (var i=0; i<spdbrks.length && ply.hasFlyBoost == false; ++i) {
+    let x, y, z;
+    x = y = z = false;
+    if (ply.pos[1] == 1) y = true;
+    if (Math.abs(ply.pos[0]-spdbrks[i].pos[0]) <= 0.01) x = true;
+    if (Math.abs(ply.pos[2]-spdbrks[i].pos[2]) <= 0.5+spdbrks[i].l/2.0) z = true;
+    if (x && y && z) {
+      spdbrks[i].pos[2] = 1000;
+      police.pos[0] = ply.pos[0];
+      if (police.pos[2] > ply.pos[2] + 20)
+        police.pos[2] = ply.pos[2] + 20;
+      ply.speed[2] = -0.0;
+    }
+  }
+  if (police.pos[2] < ply.pos[2] + 1) {
+    console.log("game over");
   }
 
   // with jumping boot

@@ -41,7 +41,7 @@ let Police = class {
         this.rotation = 0;
         this.pos = pos;
 
-        this.speed = [0, 0, -0.2];
+        this.speed = [0, 0, -0.18];
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
         

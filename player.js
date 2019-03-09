@@ -46,8 +46,8 @@ let Player = class {
         this.smljmpspd = 0.3;
         this.lrgjmpspd = 0.6;
 
-        this.speed = [0, 0, -0.2];
-        this.acc = [0, -0.016, -0.0001];
+        this.speed = [0, 0, -0.1];
+        this.acc = [0, -0.016, -0.001];
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
         
@@ -196,7 +196,7 @@ let Player = class {
             this.pos[1] = this.maxheight;
             this.speed[1] = 0;
         }
-        if (Math.abs(this.speed[2]) < 0.5 && (this.hasFlyBoost == false)) {
+        if (Math.abs(this.speed[2]) < 0.8 && (this.hasFlyBoost == false)) {
             this.speed[2] += this.acc[2];
         }
     }

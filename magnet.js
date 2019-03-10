@@ -1,12 +1,12 @@
-let Hurdle1 = class {
+let Magnet = class {
     constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         this.positions = [
-             -2.5, 3, 0,
-             2.5, 3, 0,
-             2.5, 0, 0,
-             -2.5, 0, 0,
+             -1.5, 3, 0,
+             1.5, 3, 0,
+             1.5, 0, 0,
+             -1.5, 0, 0,
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
 
@@ -42,7 +42,7 @@ let Hurdle1 = class {
                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             }
         };
-        image.src = "wooden.png";
+        image.src = "magnet.png";
 
         this.texture = txture;
         const textureCoordBuffer = gl.createBuffer();
@@ -175,7 +175,6 @@ let Hurdle1 = class {
 
         // Tell the shader we bound the texture to texture unit 0
         gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
-        // gl.uniform1i(programInfo.uniformLocations.uGray, 1);
 
         // Set the shader uniforms
 
@@ -194,7 +193,6 @@ let Hurdle1 = class {
             const offset = 0;
             gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
         }
-        // gl.uniform1i(programInfo.uniformLocations.uGray, 0);
 
     }
 };

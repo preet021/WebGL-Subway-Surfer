@@ -6,7 +6,8 @@ var downPressed = false;
 var rightPressed = false;
 var leftPressed = false;
 var spacePressed = false;
-var coins, score = 0, hurdle1s, hurdle2s, fboosts, coins1, boots, spdbrks, police;
+var coins, score = 0, finish, hurdle1s, hurdle2s, fboosts, coins1, boots, spdbrks, police, magnets;
+var flash, graysc;
 
 document.addEventListener('keydown', keyDownHandler, false);
 document.addEventListener('keyup', keyUpHandler, false);
@@ -17,6 +18,8 @@ function main() {
   const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable(gl.BLEND);
+  flash = false;
+  setInterval(function(){ flash = !flash }, 1000);
   const hurdle1texture = loadTexture(gl, 'wooden.png');
 
   ply = new Player(gl, [-3, 1, 0]);
@@ -29,6 +32,8 @@ function main() {
 
   ground = new Ground(gl, [0, -0.2, 0]);
 
+  finish = new Finish(gl, [0, 0, -100]);
+
   police = new Police(gl, [-3, 1, 8]);
   
   coins = [];
@@ -37,7 +42,7 @@ function main() {
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    coins.push(new Coin(gl, [tmp, 0.5, -Math.floor(Math.random()*99999+1)]));
+    coins.push(new Coin(gl, [tmp, 0.5, -Math.floor(Math.random()*9999+1)]));
   }
 
   coins1 = [];
@@ -46,52 +51,61 @@ function main() {
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    coins1.push(new Coin(gl, [tmp, 0.5, -Math.floor(Math.random()*99999+1)]));
+    coins1.push(new Coin(gl, [tmp, 0.5, -Math.floor(Math.random()*9999+1)]));
   }
 
   hurdle1s = [];
-  for (var i=0; i<0; ++i) {
+  for (var i=0; i<50; ++i) {
     let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    hurdle1s.push(new Hurdle1(gl, [tmp, 0, -Math.floor(Math.random()*99999+1)]));
+    hurdle1s.push(new Hurdle1(gl, [tmp, 0, -Math.floor(Math.random()*9999+1)]));
   }
   
   hurdle2s = [];
-  for (var i=0; i<50; ++i) {
+  for (var i=0; i<30; ++i) {
     let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    hurdle2s.push(new Hurdle2(gl, [tmp, 0, -Math.floor(Math.random()*99999+1)]));
+    hurdle2s.push(new Hurdle2(gl, [tmp, 0, -Math.floor(Math.random()*9999+1)]));
   }
 
   fboosts = [];
-  for (var i=0; i<50; ++i) {
+  for (var i=0; i<10; ++i) {
   	let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    fboosts.push(new Flyboost(gl, [tmp, 0.5, -Math.floor(Math.random()*99999+1)]));
+    fboosts.push(new Flyboost(gl, [tmp, 0.5, -Math.floor(Math.random()*9999+1)]));
   }
 
   boots = [];
-  for (var i=0; i<100; ++i) {
+  for (var i=0; i<10; ++i) {
   	let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    boots.push(new Boot(gl, [tmp, 0.5, -Math.floor(Math.random()*99999+1)]));
+    boots.push(new Boot(gl, [tmp, 0.5, -Math.floor(Math.random()*9999+1)]));
   }
 
   spdbrks = [];
-  for (var i=0; i<100; ++i) {
+  for (var i=0; i<30; ++i) {
   	let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
     else tmp = track2.pos[0];
-    spdbrks.push(new Brake(gl, [tmp, 0, -Math.floor(Math.random()*99999+1)]));
+    spdbrks.push(new Brake(gl, [tmp, 0, -Math.floor(Math.random()*9999+1)]));
+  }
+
+  magnets = [];
+  for (var i=0; i<30; ++i) {
+    let tmp = Math.floor(Math.random()*99+1);
+    tmp %= 2;
+    if (tmp) tmp = track1.pos[0];
+    else tmp = track2.pos[0];
+    magnets.push(new Magnet(gl, [tmp, 0.5, -Math.floor(Math.random()*9999+1)]));
   }
 
   // If we don't have a GL context, give up now
@@ -185,6 +199,59 @@ function main() {
     },
   };
 
+  const fsSource3 = `
+    varying highp vec2 vTextureCoord;
+    precision mediump float;
+
+    uniform sampler2D uSampler;
+
+    void main(void) {
+      vec4 tex = texture2D(uSampler, vTextureCoord);
+      float sum = (tex.x + tex.y + tex.z) / 3.0;
+      gl_FragColor = vec4(sum, sum, sum, 1);
+    }
+  `;
+
+  const shaderProgram3 = initShaderProgram(gl, vsSource2, fsSource3);
+
+  const programInfo3 = {
+    program: shaderProgram3,
+    attribLocations: {
+      vertexPosition: gl.getAttribLocation(shaderProgram3, 'aVertexPosition'),
+      textureCoord: gl.getAttribLocation(shaderProgram3, 'aTextureCoord'),
+    },
+    uniformLocations: {
+      projectionMatrix: gl.getUniformLocation(shaderProgram3, 'uProjectionMatrix'),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram3, 'uModelViewMatrix'),
+      uSampler: gl.getUniformLocation(shaderProgram3, 'uSampler'),
+    },
+  };
+
+  const fsSource4 = `
+    varying highp vec2 vTextureCoord;
+    precision mediump float;    
+    uniform sampler2D uSampler;
+
+    void main(void) {
+      gl_FragColor = 1.5*texture2D(uSampler, vTextureCoord);
+    }
+  `;
+
+  const shaderProgram4 = initShaderProgram(gl, vsSource2, fsSource4);
+
+  const programInfo4 = {
+    program: shaderProgram4,
+    attribLocations: {
+      vertexPosition: gl.getAttribLocation(shaderProgram4, 'aVertexPosition'),
+      textureCoord: gl.getAttribLocation(shaderProgram4, 'aTextureCoord'),
+    },
+    uniformLocations: {
+      projectionMatrix: gl.getUniformLocation(shaderProgram4, 'uProjectionMatrix'),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram4, 'uModelViewMatrix'),
+      uSampler: gl.getUniformLocation(shaderProgram4, 'uSampler'),
+    },
+  };
+
   // Here's where we call the routine that builds all the
   // objects we'll be drawing.
   //const buffers
@@ -196,16 +263,18 @@ function main() {
     now *= 0.001;  // convert to seconds
     const deltaTime = now - then;
     then = now;
-
-    drawScene(gl, programInfo1, programInfo2, deltaTime);
+    if (gameOver) {
+      return;
+    }
+    drawScene(gl, programInfo1, programInfo2, programInfo3, programInfo4, deltaTime);
 
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
 }
 
-function drawScene(gl, programInfo1, programInfo2, deltaTime) {
-  gl.clearColor(1, 1, 1, 1.0);  // Clear to black, fully opaque
+function drawScene(gl, programInfo1, programInfo2, programInfo3, programInfo4, deltaTime) {
+  gl.clearColor(0, 0, 0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
@@ -239,8 +308,8 @@ function drawScene(gl, programInfo1, programInfo2, deltaTime) {
   // the center of the scene.
     var cameraMatrix = mat4.create();
 
-    var eye = [0, ply.pos[1]+8, ply.pos[2]+18];
-    if (eye[1] < 9) eye[1] = 9;
+    var eye = [0, ply.pos[1]+6, ply.pos[2]+18];
+    if (eye[1] < 7) eye[1] = 7;
     var up = [0, 1, 0];
     var target = [0, ply.pos[1], ply.pos[2]];
     if (target[1] < 1) target[1] = 1;
@@ -263,37 +332,62 @@ function drawScene(gl, programInfo1, programInfo2, deltaTime) {
     mat4.multiply(viewProjectionMatrix, projectionMatrix, viewMatrix);
 
     // draw elements
-    ply.draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
-    ground.draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
-    track1.draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
-    track2.draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
-    wall1.draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
-    wall2.draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+    var t = document.getElementById('x').innerHTML;
+    if (t == ' ') graysc = true;
+    else graysc = false;
+    var prg, prg1;
+    if (flash) prg1 = programInfo4;
+    else prg1 = programInfo2;
+    if (graysc) {
+      prg = programInfo3;
+      prg1 = programInfo3;
+    }
+    else prg = programInfo2;
+    ply.draw(gl, viewProjectionMatrix, prg, deltaTime);
+    ground.draw(gl, viewProjectionMatrix, prg, deltaTime);
+    track1.draw(gl, viewProjectionMatrix, prg, deltaTime);
+    track2.draw(gl, viewProjectionMatrix, prg, deltaTime);
+    wall1.draw(gl, viewProjectionMatrix, prg1, deltaTime);
+    wall2.draw(gl, viewProjectionMatrix, prg1, deltaTime);
+    finish.draw(gl, viewProjectionMatrix, prg, deltaTime);
     for (var i=0; i<coins.length; ++i) {
-      coins[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+      coins[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
     for (var i=0; i<coins1.length && ply.hasFlyBoost; ++i) {
-      coins1[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+      coins1[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
     for (var i=0; i<hurdle1s.length; ++i) {
-      hurdle1s[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+      hurdle1s[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
     for (var i=0; i<hurdle2s.length; ++i) {
-      hurdle2s[i].draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
+      hurdle2s[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
     for (var i=0; i<fboosts.length; ++i) {
-      fboosts[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+      fboosts[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
     for (var i=0; i<boots.length; ++i) {
-      boots[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+      boots[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
+    }
+    for (var i=0; i<magnets.length; ++i) {
+      magnets[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
     for (var i=0; i<spdbrks.length; ++i) {
-      spdbrks[i].draw(gl, viewProjectionMatrix, programInfo2, deltaTime);
+      spdbrks[i].draw(gl, viewProjectionMatrix, prg, deltaTime);
     }
-    police.draw(gl, viewProjectionMatrix, programInfo1, deltaTime);
+    police.draw(gl, viewProjectionMatrix, prg, deltaTime);
     tick_input();
     tick_elements();
     detect_collisions();
+    if (ply.pos[2] < finish.pos[2]) {
+      gameOver = true;
+    }
+    if (gameOver) {
+      ply.pos[2] = 0;
+      alert("Game Over");
+    }
+    // score display
+    document.getElementById("score").innerHTML = "<b>Score: </b>" + Math.floor(Math.abs(ply.pos[2]));
+    document.getElementById("coins").innerHTML = "<b>Coins: </b>" + score;
 }
 
 function tick_input () {
@@ -308,13 +402,19 @@ function tick_input () {
     ply.speed[0] = -0.4;
   }
   if (leftPressed && ply.pos[0] == track1.pos[0]) {
-    // call police
+    police.pos[0] = ply.pos[0];
+    if (police.pos[2] > ply.pos[2] + 20)
+      police.pos[2] = ply.pos[2] + 20;
+    ply.speed[2] = -0.0;
   }
   if (rightPressed && ply.pos[0] < track2.pos[0]) {
     ply.speed[0] = 0.4;
   }
   if (rightPressed && ply.pos[0] == track2.pos[0]) {
-    // call police
+    police.pos[0] = ply.pos[0];
+    if (police.pos[2] > ply.pos[2] + 20)
+      police.pos[2] = ply.pos[2] + 20;
+    ply.speed[2] = -0.0;
   }
   if (downPressed && !ply.hasFlyBoost && ply.pos[1] <= 1) {
     ply.pos[1] = 0;
@@ -326,7 +426,6 @@ function tick_input () {
   if (ply.pos[1] < 0) {
     ply.pos[1] = 0;
   }
-  // console.log(ply.pos[1]);
 }
 
 function tick_elements () {
@@ -342,6 +441,22 @@ function tick_elements () {
     ply.speed[0] = 0;
     ply.pos[0] = 3;
   }
+  if (ply.hasMagnet) {
+    for (var i=0; i<coins.length; ++i) {
+      if (coins[i].pos[2] >= ply.pos[2] - 15 && coins[i].pos[2] < ply.pos[2] + 5) {
+        coins[i].pos[0] += 0.25 * (ply.pos[0] - coins[i].pos[0]);
+        coins[i].pos[1] += 0.3 * (ply.pos[1] - coins[i].pos[1]);
+        coins[i].pos[2] += 0.1 * (ply.pos[2] - coins[i].pos[2]);
+      }
+    }
+    for (var i=0; i<coins1.length; ++i) {
+      if (coins1[i].pos[2] >= ply.pos[2] - 15 && coins1[i].pos[2] < ply.pos[2] + 5) {
+        coins1[i].pos[0] += 0.25 * (ply.pos[0] - coins1[i].pos[0]);
+        coins1[i].pos[1] += 0.3 * (ply.pos[1] - coins1[i].pos[1]);
+        coins1[i].pos[2] += 0.1 * (ply.pos[2] - coins1[i].pos[2]);
+      }
+    }
+  } 
 }
 
 function detect_collisions () {
@@ -356,7 +471,6 @@ function detect_collisions () {
     if (x && y && z) {
       score += 1;
       coins[i].pos[2] = 1000;
-      // console.log("collided");
     }
   }
 
@@ -382,7 +496,6 @@ function detect_collisions () {
     if (ply.pos[1] - 0.5 <= yy) y = true;
     if (x && y && z) {
       gameOver = true;
-      // console.log("mar gaya hai...ye bhoot hai");
     }
   }
 
@@ -399,7 +512,6 @@ function detect_collisions () {
     if (!(b < c || d < a)) y = true;
     if (x && y && z) {
       gameOver = true;
-      // console.log("gaya...");
     }
   }
 
@@ -424,7 +536,7 @@ function detect_collisions () {
   		setTimeout(function(){
   			ply.speed[1] = -ply.smljmpspd;
   			ply.hasFlyBoost = false;
-  		}, 12*1000);
+  		}, 9*1000);
   	}
   }
 
@@ -444,7 +556,7 @@ function detect_collisions () {
     }
   }
   if (police.pos[2] < ply.pos[2] + 1) {
-    console.log("game over");
+    gameOver = true;
   }
 
   // with jumping boot
@@ -455,17 +567,31 @@ function detect_collisions () {
   	if (Math.abs(ply.pos[1] - boots[i].pos[1]) <= 1.3) y = true;
   	if (Math.abs(ply.pos[2] - boots[i].pos[2]) <= 1.3) z = true;
   	if (x && y && z) {
-  		console.log("gotboot");
   		bootick = 0;
   		boots[i].pos[2] = 1000;
   		ply.hasBoot = true;
   	}
   }
-  if (ply.hasBoot && bootick > 800) {
+  if (ply.hasBoot && bootick > 600) {
   	ply.hasBoot = false;
-  	console.log("gone");
   }
   else bootick += 1;
+
+  // with magnet
+  for (var i=0; i<magnets.length && ply.hasFlyBoost == false; ++i) {
+    let x, y, z;
+    x = y = z = false;
+    if (Math.abs(ply.pos[0] - magnets[i].pos[0]) <= 0.05) x = true;
+    if (Math.abs(ply.pos[1] - magnets[i].pos[1]) <= 1.3) y = true;
+    if (Math.abs(ply.pos[2] - magnets[i].pos[2]) <= 1.3) z = true;
+    if (x && y && z) {
+      magnets[i].pos[2] = 1000;
+      ply.hasMagnet = true;
+      setTimeout(function(){
+        ply.hasMagnet = false;
+      }, 12*1000);
+    }
+  }
 
 }
 

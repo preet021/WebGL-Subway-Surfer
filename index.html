@@ -7,11 +7,28 @@
   </head>
 
   <body>
-    <canvas id="glcanvas" width="935" height="640"></canvas>
+    <canvas id="glcanvas" width="935" height="640" style="float:left"></canvas>
+    <p id="score"></p>
+    <p id="coins"></p>
+    <p id="x"></p>
+    <button onclick="grsc()">Gray Scale</button>
   </body>
+  <script type="text/javascript">
+    function grsc () {
+      var c = document.getElementById('x').innerHTML;
+      if (c == ' ') {
+         document.getElementById('x').innerHTML = '';
+      }
+      else {
+        document.getElementById('x').innerHTML = ' ';
+      }
+    }
+  </script>
   <script src="./gl-matrix.js"></script>
   <script src="./police.js"></script>
   <script src="./track.js"></script>
+  <script src="./finish.js"></script>
+  <script src="./magnet.js"></script>
   <script src="./ground.js"></script>
   <script src="./flyboost.js"></script>
   <script src="./boot.js"></script>

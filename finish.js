@@ -1,12 +1,22 @@
-let Hurdle1 = class {
+let Finish = class {
     constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         this.positions = [
-             -2.5, 3, 0,
-             2.5, 3, 0,
-             2.5, 0, 0,
-             -2.5, 0, 0,
+             -5, 8, 0,
+             5, 8, 0,
+             5, 6, 0,
+             -5, 6, 0,
+
+             -5, 1, 0,
+             -4.8, 1, 0,
+             -4.8, 0, 0,
+             -5, 0, 0,
+
+             5, 1, 0,
+             4.8, 1, 0,
+             4.8, 0, 0,
+             5, 0, 0,
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW);
 
@@ -42,12 +52,22 @@ let Hurdle1 = class {
                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             }
         };
-        image.src = "wooden.png";
+        image.src = "finish.png";
 
         this.texture = txture;
         const textureCoordBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
         const textureCoordinates = [
+            0.0,  0.0,
+            2.0,  0.0,
+            2.0,  1.0,
+            0.0,  1.0,
+
+            0.0,  0.0,
+            1.0,  0.0,
+            1.0,  1.0,
+            0.0,  1.0,
+
             0.0,  0.0,
             1.0,  0.0,
             1.0,  1.0,
@@ -85,7 +105,9 @@ let Hurdle1 = class {
         // position.
 
         const indices = [
-            0, 1, 2, 0, 2, 3 // front
+            0, 1, 2, 0, 2, 3,
+            4, 5, 6, 4, 6, 7,
+            8, 9, 10, 8, 10, 11
         ];
 
         // Now send the element array to GL
@@ -175,7 +197,6 @@ let Hurdle1 = class {
 
         // Tell the shader we bound the texture to texture unit 0
         gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
-        // gl.uniform1i(programInfo.uniformLocations.uGray, 1);
 
         // Set the shader uniforms
 
@@ -189,12 +210,11 @@ let Hurdle1 = class {
             modelViewMatrix);
 
         {
-            const vertexCount = 6;
+            const vertexCount = 18;
             const type = gl.UNSIGNED_SHORT;
             const offset = 0;
             gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
         }
-        // gl.uniform1i(programInfo.uniformLocations.uGray, 0);
 
     }
 };

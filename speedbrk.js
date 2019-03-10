@@ -4,24 +4,24 @@ let Brake = class {
     constructor(gl, pos) {
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-        this.d = 5;
-        this.l = 2;
+        this.d = 3;
+        this.l = 3;
         this.positions = [
              // Front face
              -this.d/2, 0, -this.l/2,
              this.d/2, 0, -this.l/2,
-             this.d/2, 0.3, -this.l/3,
-             -this.d/2, 0.3, -this.l/3,
+             this.d/2, 0.6, -this.l/3,
+             -this.d/2, 0.6, -this.l/3,
              //Back Face
-             -this.d/2, 0.3, this.l/3,
-             this.d/2, 0.3, this.l/3,
+             -this.d/2, 0.6, this.l/3,
+             this.d/2, 0.6, this.l/3,
              this.d/2, 0, this.l/2,
              -this.d/2, 0, this.l/2,
              //Top Face
-             this.d/2, 0.3, -this.l/3,
-             -this.d/2, 0.3, -this.l/3,
-             -this.d/2, 0.3, this.l/3,
-             this.d/2, 0.3, this.l/3
+             this.d/2, 0.6, -this.l/3,
+             -this.d/2, 0.6, -this.l/3,
+             -this.d/2, 0.6, this.l/3,
+             this.d/2, 0.6, this.l/3
         ];
 
         this.rotation = 0;

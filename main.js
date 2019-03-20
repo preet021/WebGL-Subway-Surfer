@@ -32,7 +32,7 @@ function main() {
 
   ground = new Ground(gl, [0, -0.2, 0]);
 
-  finish = new Finish(gl, [0, 0, -100]);
+  finish = new Finish(gl, [0, 0, -2000]);
 
   police = new Police(gl, [-3, 1, 8]);
   
@@ -100,7 +100,7 @@ function main() {
   }
 
   magnets = [];
-  for (var i=0; i<30; ++i) {
+  for (var i=0; i<10; ++i) {
     let tmp = Math.floor(Math.random()*99+1);
     tmp %= 2;
     if (tmp) tmp = track1.pos[0];
@@ -264,7 +264,7 @@ function main() {
     const deltaTime = now - then;
     then = now;
     if (gameOver) {
-      return;
+      // return;
     }
     drawScene(gl, programInfo1, programInfo2, programInfo3, programInfo4, deltaTime);
 
@@ -382,8 +382,9 @@ function drawScene(gl, programInfo1, programInfo2, programInfo3, programInfo4, d
       gameOver = true;
     }
     if (gameOver) {
-      ply.pos[2] = 0;
-      alert("Game Over");
+      // ply.pos[2] = 0;
+      // alert("Game Over");
+      
     }
     // score display
     document.getElementById("score").innerHTML = "<b>Score: </b>" + Math.floor(Math.abs(ply.pos[2]));
@@ -504,12 +505,13 @@ function detect_collisions () {
     let x, y, z, a, b, c, d;
     x = y = z = false;
     if (Math.abs(ply.pos[0] - hurdle2s[i].pos[0]) <= 0.05) x = true;
-    if (ply.pos[2] - 1 <= hurdle2s[i].pos[2] && ply.pos[2] + 1 >= hurdle2s[i].pos[2]) z = true;
+    if (ply.pos[2] - 0.5 <= hurdle2s[i].pos[2] && ply.pos[2] + 0.5 >= hurdle2s[i].pos[2]) z = true;
     a = ply.pos[1] - 1;
     b = ply.pos[1] + 1;
     c = hurdle2s[i].pos[1] + 1;
     d = hurdle2s[i].pos[1] + 3;
-    if (!(b < c || d < a)) y = true;
+    console.log(a, b, c, d);
+    if (!(b <= c || d <= a)) y = true;
     if (x && y && z) {
       gameOver = true;
     }
